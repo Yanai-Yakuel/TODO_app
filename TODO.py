@@ -70,7 +70,7 @@ SURFACE   = "#1a1515"
 ACCENT    = "#8b2e2e"
 ACCENT2   = "#c0504a"
 TEXT      = "#ede8e8"
-TEXT_DIM  = "#6b5555"
+TEXT_DIM  = "#a08080"
 SUCCESS   = "#4caf7d"
 DANGER    = "#c0392b"
 BORDER    = "#2e1f1f"
@@ -112,7 +112,7 @@ def styled_dialog(title, prompt, kind="string"):
 
     tk.Label(dialog, text=title, font=("Courier New", 11, "bold"),
              bg=BG, fg=ACCENT2).pack(pady=(14, 2))
-    tk.Label(dialog, text=prompt, font=FONT_SMALL,
+    tk.Label(dialog, text=prompt, font=("Courier New", 11, "bold"),
              bg=BG, fg=TEXT_DIM).pack(pady=(0, 8))
 
     entry = tk.Entry(dialog, font=FONT_LABEL, bg=SURFACE, fg=TEXT,
