@@ -6,5 +6,15 @@
   {
     "name": "KOBI",
     "done": false
+  },
+  {
+    "name": "fgfgfg",
+    "done": false,
+    "priority": "low"
+  },
+  {
+    "name": "dfdf",
+    "done": false,
+    "priority": "mid"
   }
 ]

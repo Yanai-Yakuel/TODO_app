@@ -12,9 +12,12 @@ tasks = json.load(open(FILE)) if os.path.exists(FILE) else []
 def save():
     json.dump(tasks, open(FILE, 'w'), indent=2) ## SAVE JSON FILE 
 
-def add_task(name):
+def add_task(name, priority="low"):
     if name and name.strip():
-        tasks.append({"name": name.strip(), "done": False}) ##  "append" מוסיף משימה חדשה  
+        tasks.append({
+            "name": name.strip(), 
+            "done": False,
+            "priority": priority}) ##  "append" מוסיף משימה חדשה  
         save()
         return True
     return False
@@ -36,26 +39,27 @@ def delete_task(num):
 
 def add_task_ui():
     name = styled_dialog("ADD TASK", "Enter task name:")  ## שואל שם של משימה 
-    if add_task(name):
-        _info_popup("Task added.", f'"{name.strip()}" is on the list.')  
+    priority = styled_dialog("PRIORITY", "Enter priority (low / mid / high):")  # בוחרים עדיפות 
+    if priority not in ("low", "mid", "high"):
+        priority = "low"
+    if add_task(name, priority):
+        _info_popup("Task added.", f'"{name.strip()}" is on the list.')
 
 def mark_done_ui():
     num = styled_dialog("MARK DONE", "Enter task number:", kind="int")  ## שואל איזה אחת אתה רוצה לסמן 
     if num is None:
         return
     if not mark_done(num):
-        _info_popup("Invalid number.", "Check the task list and try again.") 
-
+        _info_popup("Invalid number.", "Check the task list and try again.")
 
 def delete_task_ui():
-    num = styled_dialog("DELETE TASK", "Enter task number:", kind="int") ## שואל איזה אחד תרצה למחוק 
+    num = styled_dialog("DELETE TASK", "Enter task number:", kind="int")  ## שואל איזה אחד תרצה למחוק 
     if num is None:
         return
     if delete_task(num):
         _info_popup("Deleted.", f"Task {num} removed from the list.")
     else:
         _info_popup("Invalid number.", "Check the task list and try again.")
-
 
 
 # DESIGN SECTION (User Interface)
@@ -70,6 +74,18 @@ TEXT_DIM  = "#6b5555"
 SUCCESS   = "#4caf7d"
 DANGER    = "#c0392b"
 BORDER    = "#2e1f1f"
+
+# Priority colors
+PRIORITY_COLORS = {
+    "high": "#e05252",
+    "mid":  "#e0a852",
+    "low":  "#5288e0",
+}
+PRIORITY_LABELS = {
+    "high": "▲ HIGH",
+    "mid":  "● MID",
+    "low":  "▼ LOW",
+}
 
 FONT_TITLE  = ("Courier New", 22, "bold")
 FONT_LABEL  = ("Courier New", 10)
@@ -91,7 +107,6 @@ def styled_dialog(title, prompt, kind="string"):
     y = dialog.winfo_screenheight() // 2 - h // 2
     dialog.geometry(f"+{x}+{y}")
 
-    # Top accent bar
     bar = tk.Frame(dialog, bg=ACCENT, height=3)
     bar.pack(fill="x")
 
@@ -106,7 +121,6 @@ def styled_dialog(title, prompt, kind="string"):
     entry.pack(ipady=6, pady=2)
     entry.focus_set()
 
-    # underline
     tk.Frame(dialog, bg=ACCENT, height=1, width=220).pack()
 
     result = [None]
@@ -161,10 +175,8 @@ def show_tasks_ui():
     y = win.winfo_screenheight() // 2 - h // 2
     win.geometry(f"{w}x{h}+{x}+{y}")
 
-    # ---- Top bar ----
     tk.Frame(win, bg=ACCENT, height=5).pack(fill="x")
 
-    # ---- Header ----
     hdr = tk.Frame(win, bg=BG)
     hdr.pack(fill="x", padx=28, pady=(22, 0))
 
@@ -178,13 +190,11 @@ def show_tasks_ui():
                      bg=badge_col, fg=BG, padx=6, pady=2)
     badge.pack(side="right")
 
-    # subtitle
     tk.Label(win, text=f"{len(tasks) - done_count} remaining",
              font=("Courier New", 9), bg=BG, fg=TEXT_DIM).pack(anchor="w", padx=30)
 
     tk.Frame(win, bg=BORDER, height=1).pack(fill="x", padx=28, pady=(10, 6))
 
-    # ---- Scrollable area ----
     container = tk.Frame(win, bg=BG)
     container.pack(fill="both", expand=True, padx=0)
 
@@ -203,17 +213,17 @@ def show_tasks_ui():
 
     for i, t in enumerate(tasks, 1):
         done = t["done"]
-        card_bg   = "#13131c" if done else "#1c1c2a"
-        stripe_col = SUCCESS if done else ACCENT
+        priority = t.get("priority", "low")
+        card_bg    = "#13131c" if done else "#1c1c2a"
+        stripe_col = SUCCESS if done else PRIORITY_COLORS.get(priority, ACCENT)
 
-        # outer wrapper for spacing
         wrap = tk.Frame(inner, bg=BG)
         wrap.pack(fill="x", pady=5, padx=(4, 16))
 
         card = tk.Frame(wrap, bg=card_bg)
         card.pack(fill="x")
 
-        # left stripe
+        # left stripe - color changes by priority
         tk.Frame(card, bg=stripe_col, width=5).pack(side="left", fill="y")
 
         body = tk.Frame(card, bg=card_bg)
@@ -223,20 +233,16 @@ def show_tasks_ui():
         row = tk.Frame(body, bg=card_bg)
         row.pack(fill="x")
 
-        # number pill
         num_bg = "#2a2a40" if not done else "#1a2a1a"
         tk.Label(row, text=f" {i} ", font=("Courier New", 9, "bold"),
                  bg=num_bg, fg=ACCENT2 if not done else SUCCESS,
                  padx=4).pack(side="left", padx=(0, 12))
 
-        # task name
         name_fg = TEXT if not done else TEXT_DIM
-        name_font = ("Courier New", 13) if not done else ("Courier New", 13)
-        lbl = tk.Label(row, text=t["name"], font=name_font,
+        lbl = tk.Label(row, text=t["name"], font=("Courier New", 13),
                        bg=card_bg, fg=name_fg, anchor="w")
         lbl.pack(side="left", fill="x", expand=True)
 
-        # status badge
         if done:
             tk.Label(row, text="✓", font=("Courier New", 14, "bold"),
                      bg=card_bg, fg=SUCCESS).pack(side="right", padx=(8, 0))
@@ -244,7 +250,13 @@ def show_tasks_ui():
             tk.Label(row, text="—", font=("Courier New", 12),
                      bg=card_bg, fg=TEXT_DIM).pack(side="right", padx=(8, 0))
 
-    # ---- Footer / Close ----
+        # priority badge - shown below task name
+        if not done:
+            p_color = PRIORITY_COLORS.get(priority, ACCENT2)
+            p_label = PRIORITY_LABELS.get(priority, "▼ LOW")
+            tk.Label(body, text=p_label, font=("Courier New", 8, "bold"),
+                     bg=card_bg, fg=p_color).pack(anchor="w", pady=(4, 0))
+
     tk.Frame(win, bg=BORDER, height=1).pack(fill="x", padx=28, pady=(8, 0))
 
     footer = tk.Frame(win, bg=BG)
@@ -294,10 +306,8 @@ def main_menu():
     y = root.winfo_screenheight() // 2 - h // 2
     root.geometry(f"+{x}+{y}")
 
-    # Top accent bar
     tk.Frame(root, bg=ACCENT, height=4).pack(fill="x")
 
-    # Header section
     header = tk.Frame(root, bg=BG)
     header.pack(fill="x", padx=28, pady=(30, 6))
 
@@ -308,7 +318,6 @@ def main_menu():
     tk.Label(header, text="________________", font=FONT_SMALL,
              bg=BG, fg=BORDER).pack(anchor="w", pady=(4, 0))
 
-    # Buttons
     btn_area = tk.Frame(root, bg=BG)
     btn_area.pack(fill="x", padx=28, pady=20)
 
@@ -325,7 +334,6 @@ def main_menu():
         tk.Label(inner, text=sublabel, font=FONT_SMALL,
                  bg=SURFACE, fg=TEXT_DIM, anchor="e").pack(side="right")
 
-        # Left accent stripe
         stripe = tk.Frame(f, bg=fg_col, width=3)
         stripe.place(x=0, y=0, relheight=1)
 
@@ -360,7 +368,6 @@ def main_menu():
     for label, sub, cmd, danger in actions:
         make_btn(btn_area, label, sub, cmd, danger)
 
-    # Footer
     tk.Label(root, text="v1.0  //  SHARK EDITION",
              font=("Courier New", 8), bg=BG, fg=TEXT_DIM).pack(side="bottom", pady=10)
 
